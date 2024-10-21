@@ -5,6 +5,12 @@ from dotenv import load_dotenv
 from transformers import pipeline
 
 load_dotenv()
+if not os.path.exists('.env'):
+    with open('.env', 'w') as f:
+        f.write('TOKEN=YOUR_TOKEN_HERE\n')
+    print(".env file created with required entries. Please fill in your token.")
+    exit()
+
 TOKEN = os.getenv('TOKEN')
 
 intents = discord.Intents.default()
