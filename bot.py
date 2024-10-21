@@ -15,33 +15,20 @@ TOKEN = os.getenv('TOKEN')
 
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix='!', intents=intents)
+client = discord.Client(intents=intents)
+tree = discord.app_commands.CommandTree(client)
 
 generator = pipeline('text-generation', model='gpt2')
-message_counter = 0
 
-def generate_ai_response(prompt):
-    result = generator(prompt, max_length=50, num_return_sequences=1)
-    return result[0]['generated_text']
+@tree.command(name='prompt', description='Generate a response from the AI with the given prompt.')
+async def prompt(interaction: discord.Interaction, message: str):
+    async with interaction.channel.typing():
+        ai_response = generator(message, max_length=50, num_return_sequences=1)[0]['generated_text']
+    await interaction.response.send_message(ai_response)
 
-@bot.event
-async def on_message(message):
-    global message_counter
-    if message.author == bot.user:
-        return
-    
-    message_counter += 1
-
-    if message_counter % 5 == 0:
-        user_input = message.content
-        ai_response = generate_ai_response(user_input)
-        await message.channel.send(ai_response)
-    
-    await bot.process_commands(message)
-
-@bot.event
+@client.event
 async def on_ready():
-    await bot.change_presence(activity=discord.Game(name=f'In {len(bot.guilds)} servers'))
-    print(f'Logged in as {bot.user.name}')
+    print(f'Logged in as {client.user.name}')
+    await tree.sync()
 
-bot.run(TOKEN)
+client.run(TOKEN)
